@@ -1,18 +1,19 @@
 # x-search-oauth
 
-Search X/Twitter from OpenClaw through the native OAuth-backed xAI `x_search` tool.
+Search X/Twitter from the command line through OpenClaw's native OAuth-backed xAI `x_search` tool.
 
-`x-search-oauth` is a small OpenClaw skill that tells agents to use OpenClaw's bundled `xai` plugin instead of asking for API keys or calling the xAI Responses API directly. If your OpenClaw agent can already use Grok / X Premium / SuperGrok through OAuth, this skill keeps X searches on that same authenticated path.
+`x-search-oauth` started as a small OpenClaw skill. v0.1 now also ships a JavaScript CLI that calls OpenClaw's Gateway tool invocation surface, so X auth stays inside OpenClaw instead of being reimplemented as a separate API-key or scraping path.
 
 ---
 
 ## What It Does
 
-- Routes X/Twitter research through OpenClaw's native `x_search` dynamic tool
-- Uses the bundled `xai` plugin and OAuth/auth-profile path where available
-- Avoids stale `XAI_API_KEY`-only wrappers and direct API calls
-- Encourages narrow, cited searches instead of vague trend prompts
-- Separates observed X content from inference, because posts are untrusted external content
+- Runs `x_search` through OpenClaw's bundled `xai` plugin
+- Uses OpenClaw's OAuth/auth-profile setup for Grok / X Premium / SuperGrok where available
+- Provides a CLI for X search with handle/date/media filters
+- Prints readable output by default and JSON with `--json`
+- Avoids stale `XAI_API_KEY`-only wrappers and direct xAI Responses API calls
+- Keeps X posts treated as untrusted external content
 
 ---
 
@@ -31,21 +32,85 @@ openclaw plugins enable xai
 openclaw onboard --auth-choice xai-oauth
 ```
 
-### From GitHub
-
-Clone this repo into your OpenClaw skills directory:
+### CLI from GitHub
 
 ```bash
-git clone https://github.com/LeoStehlik/x-search-oauth.git /path/to/your/skills/x-search-oauth
+git clone https://github.com/LeoStehlik/x-search-oauth.git
+cd x-search-oauth
+npm test
+npm link
 ```
 
-OpenClaw will auto-discover the skill when that skills directory is loaded.
+That installs two commands:
+
+```bash
+x-search-oauth --help
+xso --help
+```
 
 ---
 
-## Usage
+## CLI Usage
 
-Ask naturally:
+Search X:
+
+```bash
+xso --query "OpenClaw xAI OAuth" --from-date 2026-05-20
+```
+
+Restrict to handles:
+
+```bash
+xso --query "OpenClaw 2026.5.19" --handle openclaw --from-date 2026-05-20
+```
+
+Print JSON:
+
+```bash
+xso --query "AI coding agents" --from-date 2026-05-20 --json
+```
+
+Run OpenClaw OAuth onboarding:
+
+```bash
+x-search-oauth auth
+```
+
+Inspect local OpenClaw readiness:
+
+```bash
+x-search-oauth doctor
+```
+
+The CLI calls OpenClaw like this:
+
+```bash
+openclaw gateway call tools.invoke --json --params '{"name":"x_search","args":{"query":"..."}}'
+```
+
+Supported v0.1 options:
+
+```text
+-q, --query <text>          X search query
+    --handle <handle>       Restrict to handle; repeat or comma-separate
+    --exclude-handle <h>    Exclude handle; repeat or comma-separate
+    --from-date YYYY-MM-DD  Start date
+    --to-date YYYY-MM-DD    End date
+    --image                 Enable image understanding
+    --video                 Enable video understanding
+    --json                  Print normalized JSON payload
+    --raw                   Same as --json for v0.1
+    --timeout <seconds>     Gateway call timeout, default 45
+    --gateway-url <url>     Override OpenClaw gateway URL
+    --gateway-token <tok>   Override OpenClaw gateway token
+    --openclaw-bin <path>   OpenClaw executable override
+```
+
+---
+
+## Skill Usage
+
+Ask naturally inside OpenClaw:
 
 ```text
 Use x-search-oauth to search recent AI agent posts on X.
@@ -67,7 +132,7 @@ The skill tells the agent to prefer multiple narrow searches, use date/handle fi
 
 OpenClaw 2026.5.19 includes a bundled `xai` plugin that exposes `x_search` as a native dynamic tool. That means agents can search X through the same authenticated OpenClaw/xAI path used for Grok, SuperGrok, or X Premium access.
 
-This skill is the instruction layer around that native capability. It is deliberately thin: no duplicate API client, no separate credential flow, no unofficial scraping path.
+This repo is the instruction layer and CLI wrapper around that native capability. It is deliberately thin: no duplicate API client, no separate credential store, no unofficial scraping path.
 
 ---
 
@@ -75,8 +140,22 @@ This skill is the instruction layer around that native capability. It is deliber
 
 ```text
 x-search-oauth/
-`-- SKILL.md    Skill instructions, query patterns, and reporting rules
+|-- bin/x-search-oauth.js  CLI entrypoint
+|-- src/cli.js             argument parsing, OpenClaw invocation, formatting
+|-- test/cli.test.js       Node test suite with mocked OpenClaw calls
+|-- SKILL.md               OpenClaw skill instructions
+`-- README.md
 ```
+
+---
+
+## Verification
+
+```bash
+npm test
+```
+
+The test suite verifies argument parsing, the exact `tools.invoke` request shape, output formatting, and the setup hint when `x_search` is unavailable.
 
 ---
 

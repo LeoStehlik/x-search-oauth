@@ -1,6 +1,6 @@
 ---
 name: x-search-oauth
-description: "Search X/Twitter through OpenClaw's native OAuth-backed xAI x_search tool."
+description: "Search X/Twitter through OpenClaw's native OAuth-backed xAI x_search tool. Includes a JS CLI wrapper."
 homepage: https://docs.openclaw.ai/providers/xai
 metadata:
   openclaw:
@@ -12,7 +12,7 @@ metadata:
 
 # X Search OAuth
 
-Use when the user asks to search X/Twitter, inspect posts, find X trends, monitor AI/tech chatter, look up a post/thread, or gather X citations.
+Use when the user asks to search X/Twitter, inspect posts, find X trends, monitor AI/tech chatter, look up a post/thread, gather X citations, or use the `x-search-oauth` / `xso` CLI.
 
 ## Use Native OpenClaw Tooling
 
@@ -28,6 +28,17 @@ If `x_search` is unavailable, tell the user to enable/sign in with the bundled x
 openclaw plugins enable xai
 openclaw onboard --auth-choice xai-oauth
 ```
+
+For command-line use, the repo ships a JavaScript CLI:
+
+```bash
+xso --query "AI coding agents" --from-date YYYY-MM-DD
+xso --query "OpenClaw 2026.5.19" --handle openclaw --json
+x-search-oauth auth
+x-search-oauth doctor
+```
+
+The CLI calls OpenClaw Gateway `tools.invoke` with `name: "x_search"`; auth and OAuth session handling remain inside OpenClaw.
 
 ## Query Patterns
 
