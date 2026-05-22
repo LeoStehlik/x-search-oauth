@@ -25,7 +25,7 @@ This repo intentionally ships two surfaces from one source:
 From GitHub via npm:
 
 ```bash
-npm install -g github:LeoStehlik/x-search-oauth#v0.2.1
+npm install -g github:LeoStehlik/x-search-oauth#v0.2.2
 xso auth
 xso "AI coding agents" --from-date 2026-05-20
 ```
