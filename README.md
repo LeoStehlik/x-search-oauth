@@ -22,12 +22,18 @@ This repo intentionally ships two surfaces from one source:
 
 ## Install The CLI
 
-From npm, once published:
+From GitHub via npm:
+
+```bash
+npm install -g github:LeoStehlik/x-search-oauth#v0.2.1
+xso auth
+xso "AI coding agents" --from-date 2026-05-20
+```
+
+From npm registry after package publication:
 
 ```bash
 npm install -g x-search-oauth
-xso auth
-xso "AI coding agents" --from-date 2026-05-20
 ```
 
 From GitHub/source:
@@ -57,7 +63,7 @@ From ClawHub:
 openclaw skills install x-search-oauth
 ```
 
-The skill is for OpenClaw agents. It tells agents when to use native `x_search`, how to shape X queries, and how to report/cite X results. It does not install the terminal CLI; use npm or the GitHub source path for `xso`.
+The skill is for OpenClaw agents. It tells agents when to use native `x_search`, how to shape X queries, and how to report/cite X results. It also declares `xso` as an optional Node companion binary, installed from the tagged GitHub package until the npm registry package is published.
 
 ---
 
@@ -150,7 +156,7 @@ The skill tells the agent to prefer multiple narrow searches, use date/handle fi
 
 - **GitHub** is the canonical source for both the skill and CLI.
 - **ClawHub** distributes the OpenClaw skill metadata/instructions.
-- **npm** distributes the `xso` terminal utility.
+- **npm/GitHub package install** distributes the `xso` terminal utility. The current ClawHub install hint uses the tagged GitHub package; switch it to plain `x-search-oauth` after npm registry publication.
 - Git tags use SemVer (`v0.2.0`, `v0.2.1`, ...). ClawHub skill versions should match repo tags when the skill text changes.
 
 ---

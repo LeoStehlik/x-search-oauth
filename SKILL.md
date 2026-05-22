@@ -8,7 +8,13 @@ metadata:
     requires:
       plugins: ["xai"]
       tools: ["x_search"]
-  version: "0.2.0"
+    install:
+      - id: "node"
+        kind: "node"
+        package: "github:LeoStehlik/x-search-oauth#v0.2.1"
+        bins: ["xso", "x-search-oauth"]
+        label: "Install xso CLI companion (GitHub npm package)"
+  version: "0.2.1"
 ---
 
 # X Search OAuth
@@ -27,12 +33,11 @@ If `x_search` is unavailable inside OpenClaw, tell the user that the bundled xAI
 
 ## CLI Companion
 
-The same GitHub repo also ships `xso`, a standalone Node.js CLI for human terminal use. ClawHub installs this skill, not the Node binary.
+The same GitHub repo also ships `xso`, a standalone Node.js CLI for human terminal use. ClawHub installs this skill; OpenClaw can also offer the `xso` CLI as an optional Node companion binary via the skill metadata.
 
-For terminal use, install the CLI from npm or GitHub:
+For terminal use:
 
 ```bash
-npm install -g x-search-oauth
 xso auth
 xso "AI coding agents" --from-date YYYY-MM-DD
 ```
