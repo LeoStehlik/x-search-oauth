@@ -1,6 +1,6 @@
 {
   "name": "x-search-oauth",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "CLI for OAuth-backed X/Twitter search through xAI x_search.",
   "type": "module",
   "bin": {

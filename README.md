@@ -1,8 +1,11 @@
 # x-search-oauth
 
-Search X/Twitter from the command line with xAI OAuth and the xAI Responses API `x_search` tool.
+Search X/Twitter from the command line with xAI OAuth and the xAI Responses API `x_search` tool, with an OpenClaw skill for agent-side X search workflows.
 
-`x-search-oauth` began as an OpenClaw skill for the native `x_search` tool. The v0.1 CLI is now standalone: it uses xAI's browser/device-code OAuth flow directly, stores the local OAuth session under your user config directory, and runs searches without an OpenClaw Gateway tunnel.
+This repo intentionally ships two surfaces from one source:
+
+- **ClawHub skill**: `SKILL.md` for OpenClaw agents using native `x_search`.
+- **CLI utility**: `xso`, a standalone Node.js command that logs in with xAI device-code OAuth and runs terminal searches.
 
 ---
 
@@ -12,18 +15,29 @@ Search X/Twitter from the command line with xAI OAuth and the xAI Responses API 
 - Stores the OAuth token locally in `~/.config/x-search-oauth/auth.json` with `0600` permissions
 - Refreshes the token automatically when a refresh token is available
 - Calls `https://api.x.ai/v1/responses` with the `x_search` tool
-- Supports query, handle, date, image, video, JSON output options
+- Supports query, handle, date, image, video, and JSON output options
 - Keeps X posts treated as untrusted external content
 
 ---
 
-## Installation
+## Install The CLI
+
+From npm, once published:
+
+```bash
+npm install -g x-search-oauth
+xso auth
+xso "AI coding agents" --from-date 2026-05-20
+```
+
+From GitHub/source:
 
 ```bash
 git clone https://github.com/LeoStehlik/x-search-oauth.git
 cd x-search-oauth
 npm test
 npm link
+xso auth
 ```
 
 That installs two commands:
@@ -32,6 +46,18 @@ That installs two commands:
 x-search-oauth --help
 xso --help
 ```
+
+---
+
+## Install The OpenClaw Skill
+
+From ClawHub:
+
+```bash
+openclaw skills install x-search-oauth
+```
+
+The skill is for OpenClaw agents. It tells agents when to use native `x_search`, how to shape X queries, and how to report/cite X results. It does not install the terminal CLI; use npm or the GitHub source path for `xso`.
 
 ---
 
@@ -81,7 +107,7 @@ Remove the local token file contents:
 xso logout
 ```
 
-Supported v0.1 options:
+Supported v0.2.0 options:
 
 ```text
 -q, --query <text>          X search query
@@ -92,7 +118,7 @@ Supported v0.1 options:
     --image                 Enable image understanding
     --video                 Enable video understanding
     --json                  Print normalized JSON payload
-    --raw                   Same as --json for v0.1
+    --raw                   Same as --json for v0.2.0
     --timeout <seconds>     Search request timeout, default 45
     --model <name>          xAI model, default grok-4-1-fast-non-reasoning
     --max-turns <n>         Optional xAI Responses max_turns
@@ -104,7 +130,7 @@ Set `X_SEARCH_OAUTH_CONFIG_HOME` to override the config directory used for `x-se
 
 ## Skill Usage
 
-Inside OpenClaw, prefer the native `x_search` tool when it is available. The skill instructions are still included for agent-side X search workflows.
+Inside OpenClaw, prefer the native `x_search` tool when it is available. The skill instructions are included for agent-side X search workflows.
 
 Ask naturally inside OpenClaw:
 
@@ -117,6 +143,15 @@ Search X for OpenClaw xAI OAuth announcements from the last 24 hours.
 ```
 
 The skill tells the agent to prefer multiple narrow searches, use date/handle filters when useful, cite returned X status URLs, and discard no-citation summaries.
+
+---
+
+## Distribution Model
+
+- **GitHub** is the canonical source for both the skill and CLI.
+- **ClawHub** distributes the OpenClaw skill metadata/instructions.
+- **npm** distributes the `xso` terminal utility.
+- Git tags use SemVer (`v0.2.0`, `v0.2.1`, ...). ClawHub skill versions should match repo tags when the skill text changes.
 
 ---
 

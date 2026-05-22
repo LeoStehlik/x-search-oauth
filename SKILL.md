@@ -1,6 +1,6 @@
 ---
 name: x-search-oauth
-description: "Search X/Twitter through xAI OAuth and x_search. Includes a standalone JS CLI plus OpenClaw native-tool guidance."
+description: "Search X/Twitter with OAuth-backed xAI x_search; includes optional xso CLI companion guidance."
 homepage: https://github.com/LeoStehlik/x-search-oauth
 metadata:
   openclaw:
@@ -8,13 +8,14 @@ metadata:
     requires:
       plugins: ["xai"]
       tools: ["x_search"]
+  version: "0.2.0"
 ---
 
 # X Search OAuth
 
 Use when the user asks to search X/Twitter, inspect posts, find X trends, monitor AI/tech chatter, look up a post/thread, gather X citations, or use the `x-search-oauth` / `xso` CLI.
 
-## Native OpenClaw Use
+## OpenClaw Skill Path
 
 Inside OpenClaw, use the native `x_search` tool exposed by the bundled `xai` plugin when available.
 
@@ -22,21 +23,21 @@ Do not ask for `XAI_API_KEY`.
 Do not use unofficial API-key-only X search skills when native `x_search` is available.
 Do not use scraping paths.
 
-If `x_search` is unavailable inside OpenClaw, tell the user that the bundled xAI plugin must be enabled and signed in. Keep setup instructions minimal unless the user asks for the exact commands.
+If `x_search` is unavailable inside OpenClaw, tell the user that the bundled xAI plugin must be enabled and signed in. Keep setup instructions minimal unless the user asks for exact commands.
 
-## CLI Use
+## CLI Companion
 
-For command-line use, this repo ships a standalone JavaScript CLI that performs xAI device-code OAuth directly and then calls the xAI Responses API `x_search` tool.
+The same GitHub repo also ships `xso`, a standalone Node.js CLI for human terminal use. ClawHub installs this skill, not the Node binary.
+
+For terminal use, install the CLI from npm or GitHub:
 
 ```bash
+npm install -g x-search-oauth
 xso auth
-xso search --query "AI coding agents" --from-date YYYY-MM-DD
-xso search --query "OpenClaw 2026.5.19" --handle openclaw --json
-xso doctor
-xso logout
+xso "AI coding agents" --from-date YYYY-MM-DD
 ```
 
-The CLI does not require OpenClaw Gateway. OAuth state is stored under the user's config directory, normally `~/.config/x-search-oauth/auth.json`.
+The CLI performs xAI device-code OAuth directly and does not require OpenClaw Gateway. OAuth state is stored under the user's config directory, normally `~/.config/x-search-oauth/auth.json`.
 
 ## Query Patterns
 
