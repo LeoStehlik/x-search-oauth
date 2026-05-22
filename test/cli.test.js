@@ -38,3 +38,13 @@ test("formatSearchError gives OpenClaw setup hint when x_search is unavailable",
   assert.match(text, /x-search-oauth doctor/);
   assert.match(text, /x-search-oauth auth/);
 });
+
+test("blank --openclaw-bin falls back to openclaw", () => {
+  let binUsed;
+  const spawn = (bin) => {
+    binUsed = bin;
+    return { status: 1, stdout: "", stderr: "expected failure" };
+  };
+  runSearch(spawn, {}, parseArgs(["--query", "OpenClaw xAI", "--openclaw-bin", ""]));
+  assert.equal(binUsed, "openclaw");
+});

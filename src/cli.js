@@ -93,7 +93,7 @@ function buildGatewayArgs(options) {
 }
 
 function runOpenClaw(spawn, env, args, options = {}) {
-  const bin = options.openclawBin ?? env.X_SEARCH_OAUTH_OPENCLAW_BIN ?? "openclaw";
+  const bin = options.openclawBin || env.X_SEARCH_OAUTH_OPENCLAW_BIN || "openclaw";
   const result = spawn(bin, args, { encoding: "utf8", env, stdio: options.inherit ? "inherit" : "pipe", timeout: options.timeoutMs ?? DEFAULT_TIMEOUT_MS });
   return { status: result.status ?? (result.error ? 1 : 0), stdout: result.stdout ?? "", stderr: result.stderr ?? "", error: result.error };
 }
