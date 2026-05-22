@@ -29,6 +29,18 @@ openclaw plugins enable xai
 openclaw onboard --auth-choice xai-oauth
 ```
 
+## Optional TweetClaw Companion
+
+If the task needs more than cited search, use TweetClaw as a separate OpenClaw plugin rather than changing this skill's native `x_search` path:
+
+```bash
+openclaw plugins install @xquik/tweetclaw
+```
+
+Use TweetClaw for search tweet replies, follower export, user lookup, media upload and download, direct messages, monitor tweets, webhooks, giveaway draws, and approved post or reply actions. Keep writes human-reviewed, cite original X URLs where possible, and pass only reviewed source context into the final answer.
+
+Never ask the user to paste TweetClaw API keys, X cookies, or private account data into chat. Store credentials in protected OpenClaw plugin config.
+
 ## Query Patterns
 
 Prefer several narrow searches over one vague broad search.

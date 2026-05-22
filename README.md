@@ -71,6 +71,20 @@ This skill is the instruction layer around that native capability. It is deliber
 
 ---
 
+## Optional TweetClaw Companion
+
+Use native `x_search` first for OAuth-backed X/Twitter search. If an OpenClaw workflow needs broader account-backed X/Twitter automation, install [TweetClaw](https://github.com/Xquik-dev/tweetclaw) as a separate OpenClaw plugin:
+
+```bash
+openclaw plugins install @xquik/tweetclaw
+```
+
+TweetClaw is useful for search tweet replies, follower export, user lookup, media upload and download, direct messages, monitor tweets, webhooks, giveaway draws, and reviewed post or reply actions. Keep `x-search-oauth` responsible for cited search results, then pass reviewed TweetClaw source context such as tweet URLs, IDs, handles, capture dates, search queries, and metrics into your report.
+
+Do not paste API keys, cookies, or raw private account data into prompts. Store TweetClaw credentials in OpenClaw plugin config.
+
+---
+
 ## What's Inside
 
 ```text
