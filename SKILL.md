@@ -1,7 +1,7 @@
 ---
 name: x-search-oauth
-description: "Search X/Twitter through OpenClaw's native OAuth-backed xAI x_search tool. Includes a JS CLI wrapper."
-homepage: https://docs.openclaw.ai/providers/xai
+description: "Search X/Twitter through xAI OAuth and x_search. Includes a standalone JS CLI plus OpenClaw native-tool guidance."
+homepage: https://github.com/LeoStehlik/x-search-oauth
 metadata:
   openclaw:
     emoji: "X"
@@ -14,31 +14,29 @@ metadata:
 
 Use when the user asks to search X/Twitter, inspect posts, find X trends, monitor AI/tech chatter, look up a post/thread, gather X citations, or use the `x-search-oauth` / `xso` CLI.
 
-## Use Native OpenClaw Tooling
+## Native OpenClaw Use
 
-Use the native `x_search` tool exposed by OpenClaw's bundled `xai` plugin.
+Inside OpenClaw, use the native `x_search` tool exposed by the bundled `xai` plugin when available.
 
 Do not ask for `XAI_API_KEY`.
-Do not call the xAI Responses API directly.
 Do not use unofficial API-key-only X search skills when native `x_search` is available.
+Do not use scraping paths.
 
-If `x_search` is unavailable, tell the user to enable/sign in with the bundled xAI plugin:
+If `x_search` is unavailable inside OpenClaw, tell the user that the bundled xAI plugin must be enabled and signed in. Keep setup instructions minimal unless the user asks for the exact commands.
 
-```bash
-openclaw plugins enable xai
-openclaw onboard --auth-choice xai-oauth
-```
+## CLI Use
 
-For command-line use, the repo ships a JavaScript CLI:
+For command-line use, this repo ships a standalone JavaScript CLI that performs xAI device-code OAuth directly and then calls the xAI Responses API `x_search` tool.
 
 ```bash
-xso --query "AI coding agents" --from-date YYYY-MM-DD
-xso --query "OpenClaw 2026.5.19" --handle openclaw --json
-x-search-oauth auth
-x-search-oauth doctor
+xso auth
+xso search --query "AI coding agents" --from-date YYYY-MM-DD
+xso search --query "OpenClaw 2026.5.19" --handle openclaw --json
+xso doctor
+xso logout
 ```
 
-The CLI calls OpenClaw Gateway `tools.invoke` with `name: "x_search"`; auth and OAuth session handling remain inside OpenClaw.
+The CLI does not require OpenClaw Gateway. OAuth state is stored under the user's config directory, normally `~/.config/x-search-oauth/auth.json`.
 
 ## Query Patterns
 

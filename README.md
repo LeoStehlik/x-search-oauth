@@ -1,38 +1,23 @@
 # x-search-oauth
 
-Search X/Twitter from the command line through OpenClaw's native OAuth-backed xAI `x_search` tool.
+Search X/Twitter from the command line with xAI OAuth and the xAI Responses API `x_search` tool.
 
-`x-search-oauth` started as a small OpenClaw skill. v0.1 now also ships a JavaScript CLI that calls OpenClaw's Gateway tool invocation surface, so X auth stays inside OpenClaw instead of being reimplemented as a separate API-key or scraping path.
+`x-search-oauth` began as an OpenClaw skill for the native `x_search` tool. The v0.1 CLI is now standalone: it uses xAI's browser/device-code OAuth flow directly, stores the local OAuth session under your user config directory, and runs searches without an OpenClaw Gateway tunnel.
 
 ---
 
 ## What It Does
 
-- Runs `x_search` through OpenClaw's bundled `xai` plugin
-- Uses OpenClaw's OAuth/auth-profile setup for Grok / X Premium / SuperGrok where available
-- Provides a CLI for X search with handle/date/media filters
-- Prints readable output by default and JSON with `--json`
-- Avoids stale `XAI_API_KEY`-only wrappers and direct xAI Responses API calls
+- Opens a remote-friendly xAI OAuth device-code login with `xso auth`
+- Stores the OAuth token locally in `~/.config/x-search-oauth/auth.json` with `0600` permissions
+- Refreshes the token automatically when a refresh token is available
+- Calls `https://api.x.ai/v1/responses` with the `x_search` tool
+- Supports query, handle, date, image, video, JSON output options
 - Keeps X posts treated as untrusted external content
 
 ---
 
 ## Installation
-
-### OpenClaw / ClawHub
-
-```bash
-openclaw skills install x-search-oauth
-```
-
-Make sure the bundled xAI plugin is enabled and signed in:
-
-```bash
-openclaw plugins enable xai
-openclaw onboard --auth-choice xai-oauth
-```
-
-### CLI from GitHub
 
 ```bash
 git clone https://github.com/LeoStehlik/x-search-oauth.git
@@ -52,40 +37,48 @@ xso --help
 
 ## CLI Usage
 
+Authenticate once:
+
+```bash
+xso auth
+```
+
+The CLI prints a verification URL and user code. Open the URL in your browser, enter the code if needed, approve xAI access, then return to the terminal. This works when the CLI runs on a different machine, because it does not depend on a localhost callback.
+
 Search X:
 
 ```bash
-xso --query "OpenClaw xAI OAuth" --from-date 2026-05-20
+xso search --query "OpenClaw xAI OAuth" --from-date 2026-05-20
+```
+
+A positional query also works:
+
+```bash
+xso "AI coding agents" --from-date 2026-05-20
 ```
 
 Restrict to handles:
 
 ```bash
-xso --query "OpenClaw 2026.5.19" --handle openclaw --from-date 2026-05-20
+xso search --query "OpenClaw 2026.5.19" --handle openclaw --from-date 2026-05-20
 ```
 
 Print JSON:
 
 ```bash
-xso --query "AI coding agents" --from-date 2026-05-20 --json
+xso search --query "AI coding agents" --from-date 2026-05-20 --json
 ```
 
-Run OpenClaw OAuth onboarding:
+Inspect local auth state:
 
 ```bash
-x-search-oauth auth
+xso doctor
 ```
 
-Inspect local OpenClaw readiness:
+Remove the local token file contents:
 
 ```bash
-x-search-oauth doctor
-```
-
-The CLI calls OpenClaw like this:
-
-```bash
-openclaw gateway call tools.invoke --json --params '{"name":"x_search","args":{"query":"..."}}'
+xso logout
 ```
 
 Supported v0.1 options:
@@ -100,15 +93,18 @@ Supported v0.1 options:
     --video                 Enable video understanding
     --json                  Print normalized JSON payload
     --raw                   Same as --json for v0.1
-    --timeout <seconds>     Gateway call timeout, default 45
-    --gateway-url <url>     Override OpenClaw gateway URL
-    --gateway-token <tok>   Override OpenClaw gateway token
-    --openclaw-bin <path>   OpenClaw executable override
+    --timeout <seconds>     Search request timeout, default 45
+    --model <name>          xAI model, default grok-4-1-fast-non-reasoning
+    --max-turns <n>         Optional xAI Responses max_turns
 ```
+
+Set `X_SEARCH_OAUTH_CONFIG_HOME` to override the config directory used for `x-search-oauth/auth.json`.
 
 ---
 
 ## Skill Usage
+
+Inside OpenClaw, prefer the native `x_search` tool when it is available. The skill instructions are still included for agent-side X search workflows.
 
 Ask naturally inside OpenClaw:
 
@@ -120,19 +116,15 @@ Use x-search-oauth to search recent AI agent posts on X.
 Search X for OpenClaw xAI OAuth announcements from the last 24 hours.
 ```
 
-```text
-Find recent X posts about Claude Code, Codex, Cursor, and agent workflows.
-```
-
 The skill tells the agent to prefer multiple narrow searches, use date/handle filters when useful, cite returned X status URLs, and discard no-citation summaries.
 
 ---
 
 ## Why This Exists
 
-OpenClaw 2026.5.19 includes a bundled `xai` plugin that exposes `x_search` as a native dynamic tool. That means agents can search X through the same authenticated OpenClaw/xAI path used for Grok, SuperGrok, or X Premium access.
+The practical CLI path is direct xAI OAuth plus direct `x_search`. It avoids API-key-only wrappers, avoids unofficial scraping, and avoids making a command-line product depend on OpenClaw Gateway connectivity between two machines.
 
-This repo is the instruction layer and CLI wrapper around that native capability. It is deliberately thin: no duplicate API client, no separate credential store, no unofficial scraping path.
+OpenClaw remains useful as the live agent environment and as the reference implementation for xAI OAuth/tool semantics, but the CLI should be testable from a normal shell.
 
 ---
 
@@ -141,8 +133,8 @@ This repo is the instruction layer and CLI wrapper around that native capability
 ```text
 x-search-oauth/
 |-- bin/x-search-oauth.js  CLI entrypoint
-|-- src/cli.js             argument parsing, OpenClaw invocation, formatting
-|-- test/cli.test.js       Node test suite with mocked OpenClaw calls
+|-- src/cli.js             OAuth, argument parsing, xAI request, formatting
+|-- test/cli.test.js       Node test suite with mocked xAI calls
 |-- SKILL.md               OpenClaw skill instructions
 `-- README.md
 ```
@@ -153,9 +145,10 @@ x-search-oauth/
 
 ```bash
 npm test
+npm pack --dry-run
 ```
 
-The test suite verifies argument parsing, the exact `tools.invoke` request shape, output formatting, and the setup hint when `x_search` is unavailable.
+The test suite verifies argument parsing, device-code auth handling, local token refresh, xAI request shape, and output formatting.
 
 ---
 

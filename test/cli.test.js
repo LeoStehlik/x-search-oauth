@@ -1,8 +1,16 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { formatSearchError, formatSearchResult, parseArgs, runSearch } from "../src/cli.js";
+import { mkdtempSync, rmSync } from "node:fs";
+import { join } from "node:path";
+import { tmpdir } from "node:os";
+import { formatSearchResult, loginDeviceCode, parseArgs, runSearch } from "../src/cli.js";
 
-test("parseArgs accepts compact search options", () => {
+function tempAuthPath() {
+  const dir = mkdtempSync(join(tmpdir(), "xso-test-"));
+  return { dir, path: join(dir, "auth.json") };
+}
+
+test("parseArgs accepts compact direct search options", () => {
   const parsed = parseArgs(["--query", "OpenClaw xAI", "--handle", "openclaw,@grok", "--from-date", "2026-05-20", "--json"]);
   assert.equal(parsed.command, "search");
   assert.equal(parsed.query, "OpenClaw xAI");
@@ -11,19 +19,46 @@ test("parseArgs accepts compact search options", () => {
   assert.equal(parsed.json, true);
 });
 
-test("runSearch invokes OpenClaw tools.invoke with x_search args", () => {
-  let captured;
-  const spawn = (_bin, args) => {
-    captured = args;
-    return { status: 0, stdout: JSON.stringify({ ok: true, output: { details: { query: "OpenClaw xAI", model: "grok-test", tookMs: 12, content: "Observed result", citations: ["https://x.com/openclaw/status/1"] } } }), stderr: "" };
+test("parseArgs accepts positional search query", () => {
+  const parsed = parseArgs(["OpenClaw xAI", "--from-date", "2026-05-20"]);
+  assert.equal(parsed.command, "search");
+  assert.equal(parsed.query, "OpenClaw xAI");
+  assert.equal(parsed.fromDate, "2026-05-20");
+});
+
+test("loginDeviceCode stores token response", async () => {
+  const { dir, path } = tempAuthPath();
+  const calls = [];
+  const fetchImpl = async (url) => {
+    calls.push(String(url));
+    if (String(url).includes(".well-known")) return json({ device_authorization_endpoint: "https://auth.x.ai/device", token_endpoint: "https://auth.x.ai/token" });
+    if (String(url).endsWith("/device")) return json({ device_code: "dev", user_code: "USER-CODE", verification_uri: "https://auth.x.ai/activate", expires_in: 300, interval: 1 });
+    return json({ access_token: "access", refresh_token: "refresh", expires_in: 3600 });
   };
-  const result = runSearch(spawn, {}, parseArgs(["--query", "OpenClaw xAI", "--handle", "openclaw"]));
-  assert.equal(result.ok, true);
-  assert.deepEqual(captured.slice(0, 4), ["gateway", "call", "tools.invoke", "--json"]);
-  const params = JSON.parse(captured[captured.indexOf("--params") + 1]);
-  assert.equal(params.name, "x_search");
-  assert.equal(params.args.query, "OpenClaw xAI");
-  assert.deepEqual(params.args.allowed_x_handles, ["openclaw"]);
+  let output = "";
+  const credential = await loginDeviceCode({ fetchImpl, stdout: { write: (text) => { output += text; } }, sleep: async () => {}, now: () => 1000, configPath: path });
+  assert.equal(credential.accessToken, "access");
+  assert.match(output, /USER-CODE/);
+  assert.equal(calls.length, 3);
+  rmSync(dir, { recursive: true, force: true });
+});
+
+test("runSearch calls xAI Responses API with x_search tool", async () => {
+  const { dir, path } = tempAuthPath();
+  const { writeFileSync } = await import("node:fs");
+  writeFileSync(path, JSON.stringify({ accessToken: "access", refreshToken: "refresh", expires: 9999999999999, tokenEndpoint: "https://auth.x.ai/token" }));
+  let requestBody;
+  const fetchImpl = async (_url, init) => {
+    requestBody = JSON.parse(init.body);
+    assert.equal(init.headers.Authorization, "Bearer access");
+    return json({ output: [{ type: "message", content: [{ type: "output_text", text: "Observed result", annotations: [{ type: "url_citation", url: "https://x.com/openclaw/status/1" }] }] }] });
+  };
+  const result = await runSearch({ options: parseArgs(["--query", "OpenClaw xAI", "--handle", "openclaw"]), fetchImpl, now: () => 1000, configPath: path });
+  assert.equal(requestBody.tools[0].type, "x_search");
+  assert.deepEqual(requestBody.tools[0].allowed_x_handles, ["openclaw"]);
+  assert.equal(result.content, "Observed result");
+  assert.deepEqual(result.citations, ["https://x.com/openclaw/status/1"]);
+  rmSync(dir, { recursive: true, force: true });
 });
 
 test("formatSearchResult prints content and citations", () => {
@@ -33,18 +68,6 @@ test("formatSearchResult prints content and citations", () => {
   assert.match(text, /1\. https:\/\/x.com\/a\/status\/1/);
 });
 
-test("formatSearchError gives OpenClaw setup hint when x_search is unavailable", () => {
-  const text = formatSearchError({ kind: "rpc", rpc: { error: { message: "Tool not available: x_search" } } });
-  assert.match(text, /x-search-oauth doctor/);
-  assert.match(text, /x-search-oauth auth/);
-});
-
-test("blank --openclaw-bin falls back to openclaw", () => {
-  let binUsed;
-  const spawn = (bin) => {
-    binUsed = bin;
-    return { status: 1, stdout: "", stderr: "expected failure" };
-  };
-  runSearch(spawn, {}, parseArgs(["--query", "OpenClaw xAI", "--openclaw-bin", ""]));
-  assert.equal(binUsed, "openclaw");
-});
+function json(body, ok = true, status = 200) {
+  return { ok, status, statusText: ok ? "OK" : "ERR", json: async () => body };
+}
