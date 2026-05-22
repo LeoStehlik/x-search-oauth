@@ -22,18 +22,18 @@ This repo intentionally ships two surfaces from one source:
 
 ## Install The CLI
 
-From GitHub via npm:
+From npm registry:
 
 ```bash
-npm install -g github:LeoStehlik/x-search-oauth#v0.2.2
+npm install -g x-search-oauth
 xso auth
 xso "AI coding agents" --from-date 2026-05-20
 ```
 
-From npm registry after package publication:
+From GitHub via npm:
 
 ```bash
-npm install -g x-search-oauth
+npm install -g github:LeoStehlik/x-search-oauth#v0.2.3
 ```
 
 From GitHub/source:
@@ -63,7 +63,7 @@ From ClawHub:
 openclaw skills install x-search-oauth
 ```
 
-The skill is for OpenClaw agents. It tells agents when to use native `x_search`, how to shape X queries, and how to report/cite X results. It also declares `xso` as an optional Node companion binary, installed from the tagged GitHub package until the npm registry package is published.
+The skill is for OpenClaw agents. It tells agents when to use native `x_search`, how to shape X queries, and how to report/cite X results. It also declares `xso` as an optional Node companion binary, installed from the npm registry.
 
 ---
 

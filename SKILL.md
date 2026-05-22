@@ -11,10 +11,10 @@ metadata:
     install:
       - id: "node"
         kind: "node"
-        package: "github:LeoStehlik/x-search-oauth#v0.2.2"
+        package: "x-search-oauth"
         bins: ["xso", "x-search-oauth"]
-        label: "Install xso CLI companion (GitHub npm package)"
-  version: "0.2.2"
+        label: "Install xso CLI companion (npm)"
+  version: "0.2.3"
 ---
 
 # X Search OAuth
