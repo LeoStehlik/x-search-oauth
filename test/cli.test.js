@@ -29,7 +29,8 @@ test("parseArgs accepts positional search query", () => {
 test("loginDeviceCode stores token response", async () => {
   const { dir, path } = tempAuthPath();
   const calls = [];
-  const fetchImpl = async (url) => {
+  const fetchImpl = async (url, init) => {
+    assert.equal(init.redirect, "error");
     calls.push(String(url));
     if (String(url).includes(".well-known")) return json({ device_authorization_endpoint: "https://auth.x.ai/device", token_endpoint: "https://auth.x.ai/token" });
     if (String(url).endsWith("/device")) return json({ device_code: "dev", user_code: "USER-CODE", verification_uri: "https://auth.x.ai/activate", expires_in: 300, interval: 1 });
@@ -49,6 +50,7 @@ test("runSearch calls xAI Responses API with x_search tool", async () => {
   writeFileSync(path, JSON.stringify({ accessToken: "access", refreshToken: "refresh", expires: 9999999999999, tokenEndpoint: "https://auth.x.ai/token" }));
   let requestBody;
   const fetchImpl = async (_url, init) => {
+    assert.equal(init.redirect, "error");
     requestBody = JSON.parse(init.body);
     assert.equal(init.headers.Authorization, "Bearer access");
     return json({ output: [{ type: "message", content: [{ type: "output_text", text: "Observed result", annotations: [{ type: "url_citation", url: "https://x.com/openclaw/status/1" }] }] }] });
@@ -71,3 +73,22 @@ test("formatSearchResult prints content and citations", () => {
 function json(body, ok = true, status = 200) {
   return { ok, status, statusText: ok ? "OK" : "ERR", json: async () => body };
 }
+
+test("legacy gateway credential flags are rejected", () => {
+  for (const flag of ["--gateway-token", "--gateway-url"]) {
+    assert.throws(() => parseArgs(["query", flag, "synthetic"]), /unknown option/);
+  }
+});
+
+test("stored refresh endpoint cannot receive credentials outside xAI", async () => {
+  const { dir, path } = tempAuthPath();
+  const { writeFileSync } = await import("node:fs");
+  try {
+    for (const endpoint of ["https://example.invalid/token", "http://auth.x.ai/token", "https://auth.x.ai.evil.invalid/token", "https://user:pass@auth.x.ai/token"]) {
+      writeFileSync(path, JSON.stringify({accessToken: "synthetic", refreshToken: "synthetic", expires: 1, tokenEndpoint: endpoint}));
+      let calls = 0;
+      await assert.rejects(runSearch({options: parseArgs(["query"]), fetchImpl: async () => { calls++; throw new Error("unexpected fetch"); }, now: () => 1000, configPath: path}), /untrusted/);
+      assert.equal(calls, 0);
+    }
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+});

@@ -9,7 +9,7 @@ const SCOPE = "openid profile email offline_access grok-cli:access api:access";
 const DISCOVERY_URL = "https://auth.x.ai/.well-known/openid-configuration";
 const RESPONSES_ENDPOINT = "https://api.x.ai/v1/responses";
 const DEVICE_GRANT = "urn:ietf:params:oauth:grant-type:device_code";
-const USER_AGENT = "x-search-oauth/0.1.0";
+const USER_AGENT = "x-search-oauth/0.2.4";
 
 export async function main(argv, io = {}) {
   const stdout = io.stdout ?? process.stdout;
@@ -139,7 +139,7 @@ function readAuthConfig(configPath) {
 
 function writeAuthConfig(configPath, payload) {
   mkdirSync(dirname(configPath), { recursive: true, mode: 0o700 });
-  writeFileSync(configPath, JSON.stringify(payload, null, 2));
+  writeFileSync(configPath, JSON.stringify(payload, null, 2), { mode: 0o600 });
   chmodSync(configPath, 0o600);
 }
 
@@ -159,7 +159,7 @@ async function readJsonResponse(response, label) {
 
 function requireTrustedXaiUrl(value, label) {
   const url = new URL(value);
-  if (url.protocol !== "https:" || (url.hostname !== "x.ai" && !url.hostname.endsWith(".x.ai"))) {
+  if (url.username || url.password || url.port || url.protocol !== "https:" || (url.hostname !== "x.ai" && !url.hostname.endsWith(".x.ai"))) {
     throw new Error(`xAI discovery returned untrusted ${label}`);
   }
   return value;
@@ -167,6 +167,7 @@ function requireTrustedXaiUrl(value, label) {
 
 async function fetchDiscovery(fetchImpl) {
   const body = await readJsonResponse(await fetchImpl(DISCOVERY_URL, {
+    redirect: "error",
     headers: { Accept: "application/json", "User-Agent": USER_AGENT }
   }), "xAI OAuth discovery");
   return {
@@ -177,6 +178,7 @@ async function fetchDiscovery(fetchImpl) {
 
 async function requestDeviceCode(fetchImpl, discovery) {
   const body = await readJsonResponse(await fetchImpl(discovery.deviceAuthorizationEndpoint, {
+    redirect: "error",
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded", Accept: "application/json", "User-Agent": USER_AGENT },
     body: new URLSearchParams({ client_id: CLIENT_ID, scope: SCOPE })
@@ -197,6 +199,7 @@ async function pollDeviceCodeToken({ fetchImpl, tokenEndpoint, deviceCode, expir
   let delay = intervalMs;
   while (now() < deadline) {
     const response = await fetchImpl(tokenEndpoint, {
+    redirect: "error",
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded", Accept: "application/json", "User-Agent": USER_AGENT },
       body: new URLSearchParams({ grant_type: DEVICE_GRANT, client_id: CLIENT_ID, device_code: deviceCode })
@@ -261,8 +264,9 @@ export async function loginDeviceCode({ fetchImpl, stdout, sleep, now, configPat
 
 async function refreshCredential({ credential, fetchImpl, now, configPath }) {
   if (!credential.refreshToken) throw new Error("not authenticated; run `xso auth`");
-  const tokenEndpoint = credential.tokenEndpoint || (await fetchDiscovery(fetchImpl)).tokenEndpoint;
+  const tokenEndpoint = requireTrustedXaiUrl(credential.tokenEndpoint || (await fetchDiscovery(fetchImpl)).tokenEndpoint, "stored token endpoint");
   const body = await readJsonResponse(await fetchImpl(tokenEndpoint, {
+    redirect: "error",
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded", Accept: "application/json", "User-Agent": USER_AGENT },
     body: new URLSearchParams({ grant_type: "refresh_token", client_id: CLIENT_ID, refresh_token: credential.refreshToken })
@@ -320,6 +324,7 @@ export async function runSearch({ options, fetchImpl, now, configPath }) {
     ...(options.maxTurns ? { max_turns: options.maxTurns } : {})
   };
   const data = await readJsonResponse(await fetchImpl(RESPONSES_ENDPOINT, {
+    redirect: "error",
     method: "POST",
     headers: { Authorization: `Bearer ${credential.accessToken}`, "Content-Type": "application/json", Accept: "application/json", "User-Agent": USER_AGENT },
     body: JSON.stringify(body),
