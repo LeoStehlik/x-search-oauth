@@ -9,7 +9,7 @@ const SCOPE = "openid profile email offline_access grok-cli:access api:access";
 const DISCOVERY_URL = "https://auth.x.ai/.well-known/openid-configuration";
 const RESPONSES_ENDPOINT = "https://api.x.ai/v1/responses";
 const DEVICE_GRANT = "urn:ietf:params:oauth:grant-type:device_code";
-const USER_AGENT = "x-search-oauth/0.2.4";
+const USER_AGENT = "x-search-oauth/0.2.5";
 
 export async function main(argv, io = {}) {
   const stdout = io.stdout ?? process.stdout;

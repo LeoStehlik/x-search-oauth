@@ -14,7 +14,7 @@ metadata:
         package: "x-search-oauth"
         bins: ["xso", "x-search-oauth"]
         label: "Install xso CLI companion (npm)"
-  version: "0.2.4"
+  version: "0.2.5"
 ---
 
 # X Search OAuth
